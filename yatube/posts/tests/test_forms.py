@@ -10,7 +10,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.cache import cache
 
 from ..models import Group, Post, Comment
-from ..forms import PostForm, CommentForm
+from ..forms import PostForm
 
 
 User = get_user_model()
