@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}
+  Новые посты из ваших подписок
+{% endblock %}
+
+{% block content %}
+  <div class="container">
+    <h1>Последние обновления подписок</h1>
+    {% include 'includes/switcher.html' %}
+    {% for post in page_obj %}
+      <article>
+        {% include 'includes/posts.html' %}
+        <a href = "{% url 'posts:post_detail' post.id%}">подробная информация</a>
+        <br>
+        {% if post.group %}
+          <a href="{% url 'posts:group_posts' post.group.slug %}">все записи группы</a>
+        {% endif %}
+        {% if not forloop.last %}<hr>{% endif %}
+      </article>
+    {% endfor %}
+    {% include 'includes/paginator.html' %}
+  </div>
+{% endblock %}

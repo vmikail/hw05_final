@@ -6,8 +6,8 @@ from django.contrib.auth.decorators import login_required
 from datetime import date
 from django.views.decorators.cache import cache_page
 
-from .forms import PostForm
-from .models import Post, Group, User, CommentForm
+from .forms import PostForm, CommentForm
+from .models import Post, Group, User, Follow
 
 ENTRIES = 10
 
@@ -44,17 +44,21 @@ def group_posts(request, slug):
 
 
 def profile(request, username):
-    user = get_object_or_404(User, username=username)
-    posts = user.posts.select_related('author')
+    author = get_object_or_404(User, username=username)
+    posts = author.posts.select_related('author')
     paginator = Paginator(posts, ENTRIES)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    title = 'Профайл пользователя ' + str(user)
+    following = Follow.objects.filter(
+        author=author.id,
+        user=request.user.id
+    ).exists()
+    title = 'Профайл пользователя ' + str(author)
     context = {
-        'user': user,
         'page_obj': page_obj,
         'title': title,
-        'author': user,
+        'author': author,
+        'following': following,
     }
     template = 'posts/profile.html'
     return render(request, template, context)
@@ -63,7 +67,7 @@ def profile(request, username):
 def post_detail(request, post_id):
     post = get_object_or_404(Post, id=post_id)
     posts_count = post.author.posts.count()
-    form = CommentForm()
+    form = CommentForm(request.POST or None)
     comments = post.comments.all()
     context = {
         'post': post,
@@ -128,3 +132,40 @@ def add_comment(request, post_id):
         comment.post = post
         comment.save()
     return redirect('posts:post_detail', post_id=post_id)
+
+
+@login_required
+def follow_index(request):
+    users = (User.objects.get(id=request.user.id).
+             follower.all().values_list('author')
+             )
+    posts = Post.objects.filter(author__in=users)
+    paginator = Paginator(posts, ENTRIES)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    context = {
+        'page_obj': page_obj,
+    }
+    template = 'posts/follow.html'
+    return render(request, template, context)
+
+
+@login_required
+def profile_follow(request, username):
+    author = get_object_or_404(User, username=username)
+    if request.user != author:
+        Follow.objects.get_or_create(
+            user=request.user,
+            author=author
+        )
+        return redirect('posts:profile', username=username)
+    return redirect('posts:profile', username=username)
+
+
+@login_required
+def profile_unfollow(request, username):
+    if request.user.username != username:
+        author = get_object_or_404(User, username=username)
+        follower = Follow.objects.get(author=author, user=request.user)
+        follower.delete()
+        return redirect('posts:profile', username=username)

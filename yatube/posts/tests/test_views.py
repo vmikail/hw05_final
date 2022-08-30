@@ -10,7 +10,7 @@ from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.cache import cache
 
-from ..models import Group, Post
+from ..models import Group, Post, Follow
 from ..forms import PostForm
 
 
@@ -141,20 +141,23 @@ class PostViewsTest(TestCase):
 
     def test_profile_paginator_first_page(self):
         """Проверка пагинатора первой страницы profile """
-        response = self.guest_client.get(reverse(
+        cache.clear()
+        response = self.authorized_client.get(reverse(
             'posts:profile',
             kwargs={'username': self.post.author}))
         self.assertEqual(len(response.context['page_obj']), 10)
 
     def test_profile_paginator_second_page(self):
         """Проверка пагинатора второй страницы profile """
-        response = self.guest_client.get(reverse(
+        cache.clear()
+        response = self.authorized_client.get(reverse(
             'posts:profile',
             kwargs={'username': self.post.author}) + '?page=2'
         )
         self.assertEqual(len(response.context['page_obj']), 3)
 
     def check_context_page(self, context):
+        cache.clear()
         self.assertIn('page_obj', context)
         post = context['page_obj'][0]
         self.assertEqual(post.author, PostViewsTest.user)
@@ -180,15 +183,12 @@ class PostViewsTest(TestCase):
 
     def test_profile_context_is_correct(self):
         """Проверка profile context"""
-        response = self.guest_client.get(reverse(
+        cache.clear()
+        response = self.authorized_client.get(reverse(
             'posts:profile',
             kwargs={'username': self.post.author}
         ))
         self.check_context_page(context=response.context)
-        self.assertEqual(
-            str(response.context['user']),
-            str(PostViewsTest.user)
-        )
         self.assertEqual(
             str(response.context['author']),
             str(PostViewsTest.user)
@@ -261,6 +261,7 @@ class PostViewsTest(TestCase):
         self.assertIsInstance(form_obj, PostForm)
 
     def test_index_cache(self):
+        """Проверка кеширования index"""
         Post.objects.create(
             author=self.user,
             text='test',
@@ -274,3 +275,30 @@ class PostViewsTest(TestCase):
         cache.clear()
         response1 = self.guest_client.get('/')
         self.assertNotEqual(cached_response_content, response1.content)
+
+    def test_follow_and_unfollow(self):
+        """Проверка подписки и отмены подписки"""
+        no_follows = Follow.objects.all().count()
+        self.authorized_client.get(reverse(
+            'posts:profile_follow',
+            kwargs={'username': 'auth'}
+        ))
+        follows = Follow.objects.all().count()
+        self.assertEqual(no_follows, follows - 1)
+        self.authorized_client.get(reverse(
+            'posts:profile_unfollow',
+            kwargs={'username': 'auth'}
+        ))
+        unfollow = Follow.objects.all().count()
+        self.assertEqual(follows, unfollow + 1)
+
+    def test_follow_post_list(self):
+        """Проверка поста в ленте подписки"""
+        self.authorized_client.get(reverse(
+            'posts:profile_follow',
+            kwargs={'username': 'auth'}
+        ))
+        response = self.authorized_client.get('/follow/')
+        self.assertContains(response, 'Тестовый пост c картинкой')
+        response = self.author_post.get('/follow/')
+        self.assertNotContains(response, 'Тестовый пост c картинкой')

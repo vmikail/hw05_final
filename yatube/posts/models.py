@@ -71,12 +71,10 @@ class Comment(models.Model):
         return self.text
 
 
-class CommentForm(ModelForm):
-    text = forms.CharField(widget=forms.TextInput(
-        attrs={'class': 'form-control'}),
-        max_length=200
-    )
-
-    class Meta:
-        model = Comment
-        fields = ['text']
+class Follow(models.Model):
+    user = models.ForeignKey(User,
+                             on_delete=models.CASCADE,
+                             related_name='follower')
+    author = models.ForeignKey(User,
+                               on_delete=models.CASCADE,
+                               related_name='following')

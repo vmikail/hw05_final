@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase, Client
 from django.core.cache import cache
 
-from ..models import Group, Post
+from ..models import Group, Post, Comment
 
 
 User = get_user_model()
@@ -40,7 +40,7 @@ class PostModelTest(TestCase):
         url_status = {
             '/': HTTPStatus.OK,
             f'/group/{self.group.slug}/': HTTPStatus.OK,
-            f'/profile/{self.user}/': HTTPStatus.OK,
+            f'/profile/{self.post.author}/': HTTPStatus.OK,
             post_id: HTTPStatus.OK,
             'unexisting_page/': HTTPStatus.NOT_FOUND,
         }
