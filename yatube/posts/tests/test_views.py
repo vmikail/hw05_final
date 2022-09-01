@@ -270,6 +270,7 @@ class PostViewsTest(TestCase):
         response = self.guest_client.get('/')
         cached_response_content = response.content
         Post.objects.first().delete()
+        response = self.guest_client.get('/')
         self.assertEqual(Post.objects.count(), post_count - 1)
         self.assertEqual(cached_response_content, response.content)
         cache.clear()

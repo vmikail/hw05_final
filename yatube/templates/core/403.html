@@ -1,7 +1,9 @@
 {% extends "base.html" %}
-{% block title %}Custom 403{% endblock %}
+{% block title %}403 Forbidden{% endblock %}
 {% block content %}
-    <h1>Custom 403</h1>
+  <h1>403 Forbidden</h1>
+  <p>Доступ запрещен</p>
+  <a href="{% url 'posts:index' %}"> Идите на главную</a>
 {% endblock %}
 
 

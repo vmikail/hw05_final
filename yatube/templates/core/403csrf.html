@@ -1,7 +1,9 @@
 {% extends "base.html" %}
-{% block title %}Custom CSRF check error{% endblock %}
+{% block title %}CSRF check error{% endblock %}
 {% block content %}
-  <h1>Custom CSRF check error. 403</h1>
+  <h1>403 CSRF check error.</h1>
+  <p>Could not verify the provided CSRF token because your session was not found.</p>
+  <a href="{% url 'posts:index' %}"> Идите на главную</a>
 {% endblock %}
 
 

@@ -39,7 +39,7 @@ def group_posts(request, slug):
         'page_obj': page_obj,
         'title': title,
     }
-    template = "posts/group_list.html"
+    template = 'posts/group_list.html'
     return render(request, template, context)
 
 
@@ -108,8 +108,6 @@ def post_edit(request, post_id):
         files=request.FILES or None,
         instance=post
     )
-    if request.method != 'POST':
-        return render(request, template, {'form': form})
     if form.is_valid():
         post = form.save(commit=False)
         post.save()
@@ -136,10 +134,7 @@ def add_comment(request, post_id):
 
 @login_required
 def follow_index(request):
-    users = (User.objects.get(id=request.user.id).
-             follower.all().values_list('author')
-             )
-    posts = Post.objects.filter(author__in=users)
+    posts = Post.objects.filter(author__following__user=request.user)
     paginator = Paginator(posts, ENTRIES)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
@@ -166,6 +161,7 @@ def profile_follow(request, username):
 def profile_unfollow(request, username):
     if request.user.username != username:
         author = get_object_or_404(User, username=username)
-        follower = Follow.objects.get(author=author, user=request.user)
+        follower = Follow.objects.filter(author=author, user=request.user)
         follower.delete()
         return redirect('posts:profile', username=username)
+    return redirect('posts:profile', username=username)
