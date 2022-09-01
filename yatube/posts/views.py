@@ -4,7 +4,6 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.core.paginator import Paginator
 from django.contrib.auth.decorators import login_required
 from datetime import date
-from django.views.decorators.cache import cache_page
 
 from .forms import PostForm, CommentForm
 from .models import Post, Group, User, Follow
@@ -12,7 +11,6 @@ from .models import Post, Group, User, Follow
 ENTRIES = 10
 
 
-@cache_page(20, key_prefix='index_page')
 def index(request):
     posts = Post.objects.select_related().all()
     paginator = Paginator(posts, ENTRIES)
